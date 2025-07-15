@@ -14,21 +14,19 @@ type DB struct {
 }
 
 func NewDB(postgresURL string, logger *zap.Logger) (*DB, error) {
-	// Connect to PostgreSQL
 	conn, err := sqlx.Connect("postgres", postgresURL)
 	if err != nil {
 		logger.Error("Failed to connect to PostgreSQL", zap.Error(err), zap.String("url", postgresURL))
 		return nil, err
 	}
 
-	// Verify connection
+	
 	if err := conn.Ping(); err != nil {
 		logger.Error("Failed to ping PostgreSQL", zap.Error(err))
 		conn.Close()
 		return nil, err
 	}
 
-	// Initialize migrations
 	migrationDriver, err := postgres.WithInstance(conn.DB, &postgres.Config{})
 	if err != nil {
 		logger.Error("Failed to initialize migration driver", zap.Error(err))
@@ -47,7 +45,6 @@ func NewDB(postgresURL string, logger *zap.Logger) (*DB, error) {
 		return nil, err
 	}
 
-	// Apply migrations
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		logger.Error("Failed to apply migrations", zap.Error(err))
 		conn.Close()
