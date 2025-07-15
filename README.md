@@ -1,107 +1,85 @@
-orderHub_L0
-Описание проекта
-orderHub_L0 — это приложение на Go для обработки заказов, получаемых из Kafka, их сохранения в PostgreSQL и предоставления через HTTP API. Проект использует кэширование для быстрого доступа к данным и логирование для отладки. Основные функции:
+# orderHub_L0
 
-Чтение заказов из топика Kafka orders.
-Сохранение заказов в PostgreSQL с таблицами orders, deliveries, payments, items.
-Кэширование заказов в памяти.
-Предоставление данных через REST API (/order/{order_uid}).
+**orderHub_L0** — это микросервис на Go для обработки заказов, поступающих из Kafka, их сохранения в PostgreSQL и предоставления через REST API. Приложение использует кэш в памяти для быстрого доступа к заказам и логирование с помощью zap.
 
-Проект разработан для работы в Docker-контейнерах, включая PostgreSQL, Kafka и само приложение. Он использует библиотеки gorilla/mux, sqlx, zap, kafka-go и поддерживает локальную разработку на Windows с GoLand (версия 2024.3).
-Структура проекта
-Основные файлы и директории
+---
 
-cmd/server/main.goТочка входа приложения. Инициализирует базу данных, кэш, HTTP-сервер и Kafka-консьюмер.Artifact ID: a1895c98-1b1d-45d3-90f7-82da0474b019, Version ID: 76b886bf-c91d-4279-9b9b-1c32c657fd57
+## 🔧 Функциональность
 
-internal/model/model.goОпределяет структуры данных (Order, Delivery, Payment, Item) с тегами для JSON и SQL маппинга.Artifact ID: f552795b-551f-4a9e-81fb-ea1b4fd374f9, Version ID: 722dad7a-7e04-42f5-9a07-65f79956db38
+- Получение заказов из Kafka (топик `orders`)
+- Сохранение заказов в PostgreSQL в таблицы `orders`, `deliveries`, `payments`, `items`
+- Кэширование заказов в памяти
+- HTTP API для получения заказа по `order_uid`
 
-internal/db/db.goСодержит логику подключения к PostgreSQL с использованием sqlx.Artifact ID: 9ecbf73a-5fc8-4097-8b48-2fe2346193a9, Version ID: fdfc0302-26e5-4ef7-955a-d4d1c46badcb
+---
 
-internal/db/migrations/000001_create_orders_tables.up.sqlМиграция для создания таблиц orders, deliveries, payments, items в PostgreSQL.Artifact ID: 9a7d0dcf-6d1c-4cd7-9f6b-8c19d20286c3, Version ID: 9dbb387c-cd4a-4bdd-8688-089cfa82551e
+## 🗂 Структура проекта
 
-internal/service/service.goРеализует бизнес-логику: загрузка заказов в кэш (LoadCache) и получение заказа по order_uid (GetOrder).Artifact ID: 56112b38-edf8-4ac0-908c-281e6aaa1bb9, Version ID: 471bf500-4cdc-4f38-89a8-62f6dc59ed08
+```plaintext
+cmd/server/main.go                # Точка входа приложения
+internal/model/model.go           # Структуры данных (Order, Delivery, Payment, Item)
+internal/db/db.go                 # Подключение к PostgreSQL через sqlx
+internal/db/migrations/...        # Миграции для создания таблиц
+internal/service/service.go       # Загрузка заказов в кэш, обработка логики
+internal/consumer/consumer.go     # Kafka-консьюмер и обработка заказов
+internal/cache/cache.go           # In-memory кэш
+internal/handler/handler.go       # HTTP обработчики
+.env                              # Переменные окружения
+docker-compose.yml                # Запуск PostgreSQL, Kafka и приложения
+Dockerfile                        # Сборка приложения
+go.mod / go.sum                   # Зависимости Go
+📦 Требования
+Go 1.23.4
 
-internal/consumer/consumer.goKafka-консьюмер, читающий сообщения из топика orders, десериализующий JSON в model.Order и сохраняющий в базу данных и кэш.Artifact ID: 79bb1768-4fb0-4127-83a8-1dcfe21ec06f, Version ID: f39ccbb6-458f-4c9b-9056-023ccb3dcd48
+Docker Desktop с WSL2 (для Windows)
 
-internal/cache/cache.goРеализует in-memory кэш для хранения заказов с методами Set и Get.Artifact ID: d23318f7-9254-4c34-9de2-73e14f2988af, Version ID: 07076dd1-1820-4cec-9b6a-b0ec1f2379e6
+PostgreSQL (через Docker)
 
-internal/handler/handler.goHTTP-обработчик для эндпоинта /order/{order_uid} с использованием gorilla/mux.Artifact ID: e5527738-3a63-46a4-80ea-92749f2f1123, Version ID: 3269b5cf-6cc8-43e0-aa9d-1447d3d3899e
+Kafka (через Docker)
 
-.envФайл конфигурации с переменными окружения (POSTGRES_URL, KAFKA_BROKERS, HTTP_PORT).Artifact ID: 7b1df1e9-7ddb-4b32-9511-9e631c3caabe, Version ID: 21447c18-7e69-4e53-b680-4f6c2006e479
+curl — для тестов API
 
-go.modОпределяет зависимости проекта (gorilla/mux, sqlx, zap, kafka-go и др.).Artifact ID: 2732c80c-eacb-45d6-a2ca-41d3bb49b18a, Version ID: 349bdb8f-6b78-4a70-91f8-361df7f77a8c
+psql — для работы с базой
 
-docker-compose.ymlКонфигурация Docker для запуска PostgreSQL, Zookeeper, Kafka и приложения.Artifact ID: 0e4a014b-08ec-48c5-831f-5b1b6df8ea28, Version ID: 5419ed51-282d-43f0-b569-bbeef5f2a96b
+goose — для миграций (v3.22.1)
 
-DockerfileОписывает сборку Docker-образа приложения с использованием многоступенчатой сборки (Go 1.23.4 и Alpine).Artifact ID: a1272ab9-5ef4-42f5-86d3-f18046f30c12, Version ID: c6c5afbc-1679-447c-aedc-764f7bb4ee56
-
-
-Требования
-
-Go: 1.23.4
-Docker: Docker Desktop для Windows с WSL 2
-GoLand: Версия 2024.3 (опционально)
-PostgreSQL: Доступ через Docker (образ postgres:16)
-Kafka: Доступ через Docker (образ confluentinc/cp-kafka:latest)
-Инструменты:
-psql для проверки базы данных
-curl для тестирования HTTP API
-goose для миграций (версия 3.22.1)
-
-
-
-Установка и запуск
-1. Клонирование репозитория
-Если проект еще не склонирован:
-git clone <repository_url>
+🚀 Установка и запуск
+1. Клонировать репозиторий
+bash
+Копировать
+Редактировать
+git clone <URL_репозитория>
 cd orderHub_L0
-
-Или используйте локальную папку C:\orderHub_L0.
-2. Проверка зависимостей
-cd C:\orderHub_L0
+2. Установить зависимости
+bash
+Копировать
+Редактировать
 go mod tidy
-
-3. Настройка Docker
-Убедитесь, что Docker Desktop установлен и WSL 2 включен. Добавьте C:\orderHub_L0 в File Sharing (Docker Desktop > Settings > Resources > File Sharing).
-4. Запуск сервисов
-Запустите PostgreSQL, Zookeeper, Kafka и приложение:
-cd C:\orderHub_L0
+3. Запустить сервисы через Docker
+bash
+Копировать
+Редактировать
 docker-compose up -d
+Проверьте, что контейнеры работают:
 
-Проверьте запущенные контейнеры:
+bash
+Копировать
+Редактировать
 docker ps
+4. Применить миграции
+bash
+Копировать
+Редактировать
+docker run -v "$(pwd)/internal/db/migrations:/migrations" --network host \
+  -e POSTGRES_URL=postgres://order_user:securepassword@localhost:5432/orders_db?sslmode=disable \
+  pressly/goose:3.22.1 postgres up
+🧪 Тестирование
+1. Отправка тестового заказа в Kafka
+Создайте файл order1001test.json со следующим содержимым:
 
-Ожидаемые контейнеры: orderhub_l0_app_1, orderhub_l0_kafka_1, orderhub_l0_zookeeper_1, orderhub_l0_postgres_1.
-5. Применение миграций
-Создайте таблицы в PostgreSQL:
-cd C:\orderHub_L0
-docker run -v "C:\orderHub_L0\internal\db\migrations:/migrations" --network host -e POSTGRES_URL=postgres://order_user:securepassword@localhost:5432/orders_db?sslmode=disable pressly/goose:3.22.1 postgres up
-
-6. Проверка Kafka
-Проверьте или создайте топик orders:
-docker exec -it orderhub_l0_kafka_1 bash
-
-Внутри контейнера:
-kafka-topics.sh --bootstrap-server kafka:9092 --list
-
-Если топик orders отсутствует:
-kafka-topics.sh --bootstrap-server kafka:9092 --create --topic orders --partitions 1 --replication-factor 1
-
-Выйдите:
-exit
-
-7. Проверка логов приложения
-docker logs orderhub_l0_app_1
-
-Ожидаемый вывод:
-{"level":"info","msg":"Database initialized successfully"}
-{"level":"info","msg":"Cache loaded successfully","order_count":0}
-{"level":"info","msg":"Starting HTTP server","port":"8081"}
-
-Тестирование
-1. Отправка тестовых данных в Kafka
-
-Создайте файл order1001test.json в C:\orderHub_L0:
+json
+Копировать
+Редактировать
 {
   "order_uid": "order1001test",
   "track_number": "WBILMTESTTRACK",
@@ -149,110 +127,99 @@ docker logs orderhub_l0_app_1
   "date_created": "2025-07-12T15:00:00Z",
   "oof_shard": "1"
 }
+Загрузите файл в контейнер Kafka и отправьте сообщение:
 
+bash
+Копировать
+Редактировать
+docker cp order1001test.json orderhub_l0_kafka_1:/tmp/order1001test.json
 
-Скопируйте файл в контейнер Kafka:
-docker cp C:\orderHub_L0\order1001test.json orderhub_l0_kafka_1:/tmp/order1001test.json
-
-
-Отправьте данные:
 docker exec -it orderhub_l0_kafka_1 bash
-
-Внутри:
 cat /tmp/order1001test.json | kafka-console-producer.sh --broker-list kafka:9092 --topic orders
-
-Выйдите:
 exit
-
-
 Проверьте логи:
+
+bash
+Копировать
+Редактировать
 docker logs orderhub_l0_app_1
+Ожидаемый вывод:
 
-Ожидаемый лог:
+json
+Копировать
+Редактировать
 {"level":"info","msg":"Order processed and cached","order_uid":"order1001test"}
-
-
-
-2. Проверка HTTP API
+2. Проверка REST API
+bash
+Копировать
+Редактировать
 curl http://localhost:8081/order/order1001test
+Ожидается JSON с заказом.
 
-Ожидаемый ответ:
-{
-  "order_uid": "order1001test",
-  "track_number": "WBILMTESTTRACK",
-  "entry": "WBIL",
-  "delivery": {
-    "name": "Alexey Petrov",
-    "phone": "+79161234567",
-    "zip": "101000",
-    "city": "Saint Petersburg",
-    "address": "Nevsky Prospekt 20",
-    "region": "Leningrad",
-    "email": "alexey.petrov@example.com"
-  },
-  ...
-}
-
-3. Проверка базы данных
+3. Проверка в базе данных
+bash
+Копировать
+Редактировать
 psql -h localhost -U order_user -d orders_db
-
-Внутри:
+sql
+Копировать
+Редактировать
 SELECT * FROM orders WHERE order_uid = 'order1001test';
 SELECT * FROM deliveries WHERE order_uid = 'order1001test';
 SELECT * FROM payments WHERE order_uid = 'order1001test';
 SELECT * FROM items WHERE order_uid = 'order1001test';
+Пароль пользователя: securepassword
 
-Пароль: securepassword. Выйдите: \q.
-Устранение неполадок
+⚙️ Проблемы и их решения
+Порты заняты
+Проверьте и завершите процессы:
 
-Занятые порты:
+bash
+Копировать
+Редактировать
 netstat -ano | findstr :5432
-netstat -ano | findstr :2181
-netstat -ano | findstr :9092
-netstat -ano | findstr :8081
 taskkill /PID <PID> /F
+Ошибки Kafka
+Убедитесь, что топик orders существует:
 
+bash
+Копировать
+Редактировать
+docker exec -it orderhub_l0_kafka_1 bash
+kafka-topics.sh --bootstrap-server kafka:9092 --list
+Создайте топик, если он отсутствует:
 
-Кодировка файлов: Убедитесь, что order1001test.json, Dockerfile, .env сохранены в UTF-8 с CRLF (VS Code или GoLand).
-
-WSL 2: Добавьте C:\orderHub_L0 в File Sharing (Docker Desktop > Settings > Resources > File Sharing).
-
-GoLand: Если сборка не проходит, очистите кэш (File > Invalidate Caches / Restart).
-
-Ошибки Kafka:
-
-Проверьте логи: docker logs orderhub_l0_kafka_1.
-Убедитесь, что топик orders существует.
-
-
-Ошибки базы данных:
-
-Проверьте миграции: повторно выполните команду goose.
-Очистите базу данных:DELETE FROM items WHERE order_uid = 'order1001test';
+bash
+Копировать
+Редактировать
+kafka-topics.sh --bootstrap-server kafka:9092 --create --topic orders --partitions 1 --replication-factor 1
+Повторная очистка БД (удалить тестовый заказ)
+sql
+Копировать
+Редактировать
+DELETE FROM items WHERE order_uid = 'order1001test';
 DELETE FROM payments WHERE order_uid = 'order1001test';
 DELETE FROM deliveries WHERE order_uid = 'order1001test';
 DELETE FROM orders WHERE order_uid = 'order1001test';
+🧑‍💻 Разработка с GoLand
+Открой проект в GoLand.
 
+Установи переменную окружения GO_DOTENV_PATH=.env в Run > Edit Configurations.
 
+Запускай cmd/server/main.go напрямую.
 
+📹 Демонстрация
+Для финальной проверки:
 
+Показать структуру проекта
 
-Разработка с GoLand
+Запустить Docker-сервисы
 
-Откройте C:\orderHub_L0 в GoLand (версия 2024.3).
-Установите GO_DOTENV_PATH=C:\orderHub_L0\.env в Run > Edit Configurations.
-Запустите cmd/server/main.go через "Run" или "Build".
+Применить миграции
 
-Демонстрация
+Отправить JSON в Kafka
 
-Запишите видео, показывающее:
-Структуру проекта (C:\orderHub_L0).
-Запуск сервисов (docker-compose up -d).
-Применение миграций.
-Отправку JSON в Kafka.
-Логи приложения (docker logs orderhub_l0_app_1).
-Проверку HTTP API (curl http://localhost:8081/order/order1001test).
-Проверку базы данных (SELECT * FROM orders;).
+Проверить логи и API
 
+Проверить запись в базе данных
 
-Загрузите код в GitHub и отправьте ссылку с видео.
