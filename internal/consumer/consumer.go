@@ -72,7 +72,7 @@ VALUES (:order_uid, :track_number, :entry, :locale, :customer_id, :delivery_serv
 				continue
 			}
 
-			// Insert delivery
+		
 			deliveryData := map[string]interface{}{
 				"order_uid":     order.OrderUID,
 				"delivery_name": order.Delivery.Name,
@@ -93,7 +93,6 @@ VALUES (:order_uid, :delivery_name, :phone, :zip, :city, :address, :region, :ema
 				continue
 			}
 
-			// Insert payment
 			_, err = tx.NamedExec(`
 INSERT INTO payments (order_uid, transaction, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee)
 VALUES (:order_uid, :transaction, :currency, :provider, :amount, :payment_dt, :bank, :delivery_cost, :goods_total, :custom_fee)
@@ -104,7 +103,7 @@ VALUES (:order_uid, :transaction, :currency, :provider, :amount, :payment_dt, :b
 				continue
 			}
 
-			// Insert items
+			
 			for i, item := range order.Items {
 				itemData := map[string]interface{}{
 					"order_uid":    order.OrderUID,
